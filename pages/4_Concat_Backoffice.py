@@ -7,6 +7,34 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 pd.set_option('display.max_colwidth', None)
 
+# Column mapping dictionary
+MUMA_MAPPING = {
+    'BO_PayeesID': 'Member Reference',
+    'Payee_Name': 'Member Name',
+    'Publisher': 'PUBLISHER',
+    'Country_Of_Sale': 'Territory',
+    'StartDate': 'Date From (MM/YYYY)',
+    'EndDate': 'Date To (MM/YYYY)',
+    'BO_SongCode': 'BO_SONGCODE',
+    'Publishers_SongCode': 'PUBLISHERS_SONGCODE',
+    'Song_Title': 'Song Title',
+    'Song_Owners': 'Song Composer(s)',
+    'Performer': 'Artist',
+    'Customer': 'CUSTOMER',
+    'ISWC': 'ISWC',
+    'ISRC': 'ISRC',
+    'Currency': 'CURRENCY',
+    'Format': 'Instrumental or Vocal Use',
+    'Total_Units': 'Units',
+    'ROYATIES_GROSS_$': 'ROYATIES_GROSS_$',
+    'ADMIN_FEE_$': 'ADMIN_FEE_$',
+    'ROYALTIES_TO_BE_PAID_$': 'Amount',
+    'Source': 'Source of Income',
+    'Statement_Period_#': 'STATEMENT_PERIOD_#',
+    'Statement_Period': 'STATEMENT_PERIOD',
+    'Payee_Statement_#': 'PAYEE_STATEMENT_#'
+}
+
 #----------------------------------
 # Concat & Totalize Files
 #----------------------------------
@@ -22,7 +50,14 @@ uploaded_files = st.file_uploader("Faça o upload dos arquivos Excel",
 
 if uploaded_files:
     # Botões para escolher a ação
-    concat_button = st.button('Concatenar arquivos', type='secondary')
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        concat_button = st.button('Concatenar arquivos', type='secondary')
+    with col2:
+        totals_button = st.button('Calcular totais', type='primary')
+    with col3:
+        muma_button = st.button('Gerar planilha MuMa', type='secondary')
     
     if concat_button:
         try:
@@ -65,8 +100,6 @@ if uploaded_files:
             
         except Exception as e:
             st.error(f"Erro ao concatenar os arquivos: {str(e)}")
-    
-    totals_button = st.button('Calcular totais', type='primary')
     
     if totals_button:
         try:
@@ -115,6 +148,54 @@ if uploaded_files:
 
         except Exception as e:
             st.error(f"Erro ao processar os totais: {str(e)}")
+            
+    if muma_button:
+        try:
+            # Lista para armazenar os DataFrames
+            dataframes = []
+            
+            # Processamento com barra de progresso
+            progress_bar = st.progress(0)
+            for i, file in enumerate(uploaded_files):
+                progress = (i + 1) / len(uploaded_files)
+                progress_bar.progress(progress)
+                
+                # Lê o arquivo e adiciona ao DataFrame
+                df = pd.read_excel(file)
+                dataframes.append(df)
+                            
+            # Concatena todos os DataFrames
+            df = pd.concat(dataframes, ignore_index=True)
+            
+            # Converte as datas para o formato MM/YYYY
+            df['StartDate'] = pd.to_datetime(df['StartDate'], dayfirst=True).dt.strftime('%m/%Y')
+            df['EndDate'] = pd.to_datetime(df['EndDate'], dayfirst=True).dt.strftime('%m/%Y')
+            
+            # Renomeia as colunas conforme o mapping
+            df_muma = df.rename(columns=MUMA_MAPPING)
+            
+            # Prepara o arquivo para download
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+                df_muma.to_excel(writer, index=False)
+            
+            # Informações sobre o resultado
+            st.success(f"""
+            Planilha MuMa gerada com sucesso!
+            - Total de linhas: {len(df_muma)}
+            - Total de colunas: {len(df_muma.columns)}
+            """)
+            
+            # Botão de download
+            st.download_button(
+                label="📥 Baixar planilha MuMa",
+                data=buffer.getvalue(),
+                file_name="planilha_muma.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            
+        except Exception as e:
+            st.error(f"Erro ao gerar planilha MuMa: {str(e)}")
 
 else:
     st.info("Aguardando upload dos arquivos...")
