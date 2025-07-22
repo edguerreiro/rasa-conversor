@@ -28,7 +28,7 @@ MUMA_MAPPING = {
     'Total_Units': 'Units',
     'ROYATIES_GROSS_$': 'ROYATIES_GROSS_$',
     'ADMIN_FEE_$': 'ADMIN_FEE_$',
-    'ROYALTIES_TO_BE_PAID_$': 'Amount',
+    'ROYALTIES_TO_BE_PAID': 'Amount',
     'Source': 'Source of Income',
     'Statement_Period_#': 'STATEMENT_PERIOD_#',
     'Statement_Period': 'STATEMENT_PERIOD',
@@ -116,25 +116,25 @@ if uploaded_files:
                 if "ST" in file.name.upper():
                     df = pd.read_excel(file)
                     
-                    if "ROYALTIES_TO_BE_PAID_$" in df.columns:
-                        total_royalties = df["ROYALTIES_TO_BE_PAID_$"].sum()
+                    if "ROYALTIES_TO_BE_PAID" in df.columns:
+                        total_royalties = df["ROYALTIES_TO_BE_PAID"].sum()
                         results.append((file.name, total_royalties))
                     else:
-                        st.warning(f"A coluna 'ROYALTIES_TO_BE_PAID_$' não foi encontrada em {file.name}")
+                        st.warning(f"A coluna 'ROYALTIES_TO_BE_PAID' não foi encontrada em {file.name}")
 
             if results:
                 # Cria o DataFrame com os resultados
-                df_results = pd.DataFrame(results, columns=["Arquivo", "Soma de ROYALTIES_TO_BE_PAID_$"])
+                df_results = pd.DataFrame(results, columns=["Arquivo", "Soma de ROYALTIES_TO_BE_PAID"])
 
                 # Arredonda os valores para duas casas decimais
-                df_results["Soma de ROYALTIES_TO_BE_PAID_$"] = df_results["Soma de ROYALTIES_TO_BE_PAID_$"].round(2)
+                df_results["Soma de ROYALTIES_TO_BE_PAID"] = df_results["Soma de ROYALTIES_TO_BE_PAID"].round(2)
 
                 # Adiciona uma linha com a soma total
-                total_royalties_sum = df_results["Soma de ROYALTIES_TO_BE_PAID_$"].sum().round(2)
+                total_royalties_sum = df_results["Soma de ROYALTIES_TO_BE_PAID"].sum().round(2)
                 df_results.loc[len(df_results.index)] = ["Total", total_royalties_sum]
 
                 # Formata como moeda brasileira
-                df_results["Soma de ROYALTIES_TO_BE_PAID_$"] = df_results["Soma de ROYALTIES_TO_BE_PAID_$"].apply(
+                df_results["Soma de ROYALTIES_TO_BE_PAID"] = df_results["Soma de ROYALTIES_TO_BE_PAID"].apply(
                     lambda x: f"R${x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                 )
 
